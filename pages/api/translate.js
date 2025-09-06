@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { Translate } from '@google-cloud/translate';
+const { Translate } = require('@google-cloud/translate').v2;
 
 // Google Slides Translation API
 // Inspired by: https://github.com/chrisaharden/google_slides_ai_translator by Chris Harden
