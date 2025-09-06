@@ -45,15 +45,27 @@ export default async function handler(req, res) {
     const result = await translatePresentation(presentationId, targetLanguage);
     
     // Check if any slides failed with permission errors
-    const permissionErrors = result.filter(slideResult => 
-      !slideResult.success && slideResult.error && (
+    const failedSlides = result.filter(slideResult => !slideResult.success);
+    const permissionErrors = failedSlides.filter(slideResult => 
+      slideResult.error && (
         slideResult.error.includes('permission') || 
         slideResult.error.includes('403') ||
-        slideResult.error.includes('The caller does not have permission')
+        slideResult.error.includes('The caller does not have permission') ||
+        slideResult.error.includes('forbidden') ||
+        slideResult.error.includes('Forbidden')
       )
     );
     
-    if (permissionErrors.length > 0) {
+    console.log(`Failed slides: ${failedSlides.length}, Permission errors: ${permissionErrors.length}`);
+    
+    // If we have failed slides and any of them are permission-related, throw permission error
+    if (failedSlides.length > 0 && permissionErrors.length > 0) {
+      throw new Error('Permission denied: The presentation must be set to "Anyone with the link can edit". Please update the sharing settings and try again.');
+    }
+    
+    // If all slides failed but no specific permission errors detected, still check if it might be permissions
+    if (failedSlides.length === result.length && failedSlides.length > 0) {
+      // All slides failed - likely a permission issue
       throw new Error('Permission denied: The presentation must be set to "Anyone with the link can edit". Please update the sharing settings and try again.');
     }
     
