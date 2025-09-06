@@ -44,6 +44,19 @@ export default async function handler(req, res) {
     // Start translation process using our centralized API
     const result = await translatePresentation(presentationId, targetLanguage);
     
+    // Check if any slides failed with permission errors
+    const permissionErrors = result.filter(slideResult => 
+      !slideResult.success && slideResult.error && (
+        slideResult.error.includes('permission') || 
+        slideResult.error.includes('403') ||
+        slideResult.error.includes('The caller does not have permission')
+      )
+    );
+    
+    if (permissionErrors.length > 0) {
+      throw new Error('Permission denied: The presentation must be set to "Anyone with the link can edit". Please update the sharing settings and try again.');
+    }
+    
     res.json({
       success: true,
       presentationId,
@@ -114,19 +127,6 @@ async function translatePresentation(presentationId, targetLanguage) {
 
     // Wait for all slides to complete
     const results = await Promise.all(translationPromises);
-    
-    // Check if any slides failed with permission errors
-    const permissionErrors = results.filter(result => 
-      !result.success && result.error && (
-        result.error.includes('permission') || 
-        result.error.includes('403') ||
-        result.error.includes('The caller does not have permission')
-      )
-    );
-    
-    if (permissionErrors.length > 0) {
-      throw new Error('Permission denied: The presentation must be set to "Anyone with the link can edit". Please update the sharing settings and try again.');
-    }
     
     console.log(`Successfully processed ${results.length} slides with centralized API`);
     return results;
