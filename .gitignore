@@ -22,10 +22,10 @@ pids
 .env.production.local
 
 # Google Cloud credentials (NEVER commit these!)
-*.json
 service-account*.json
 google-credentials*.json
 credentials.json
+*-credentials.json
 
 # Vercel
 .vercel
