@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Globe, Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { SharingPopup } from '../components/ui/sharing-popup';
 
 export default function Loading() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('initializing');
   const [message, setMessage] = useState('Preparing translation...');
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState('');
   const [slideUrl, setSlideUrl] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('2-3 minutes');
+  const [showSharingPopup, setShowSharingPopup] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -50,9 +53,33 @@ export default function Loading() {
       }
     } catch (err) {
       console.error('Translation error:', err);
-      setError(err.response?.data?.details || 'Translation failed. Please try again.');
+      const errorData = err.response?.data || {};
+      setError(errorData.error || 'Translation failed. Please try again.');
+      setErrorType(errorData.errorType || 'general');
       setStatus('error');
+      
+      // Show sharing popup for permission errors
+      if (errorData.errorType === 'permission') {
+        setShowSharingPopup(true);
+      }
     }
+  };
+
+  const handleRetryTranslation = () => {
+    // Reset state and retry translation
+    setError('');
+    setErrorType('');
+    setStatus('initializing');
+    setProgress(0);
+    setMessage('Preparing translation...');
+    setShowSharingPopup(false);
+    
+    // Retry the translation
+    startTranslation(slideUrl);
+  };
+
+  const handleCloseSharingPopup = () => {
+    setShowSharingPopup(false);
   };
 
   const getStatusIcon = () => {
@@ -133,12 +160,34 @@ export default function Loading() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className={`border rounded-lg p-4 mb-6 ${
+              errorType === 'permission' 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-red-50 border-red-200'
+            }`}>
               <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-red-800 mb-1">Translation Failed</h3>
-                  <p className="text-sm text-red-700">{error}</p>
+                <AlertCircle className={`w-5 h-5 mt-0.5 ${
+                  errorType === 'permission' ? 'text-yellow-600' : 'text-red-600'
+                }`} />
+                <div className="flex-1">
+                  <h3 className={`font-medium mb-1 ${
+                    errorType === 'permission' ? 'text-yellow-800' : 'text-red-800'
+                  }`}>
+                    {errorType === 'permission' ? 'Sharing Permission Required' : 'Translation Failed'}
+                  </h3>
+                  <p className={`text-sm ${
+                    errorType === 'permission' ? 'text-yellow-700' : 'text-red-700'
+                  }`}>
+                    {error}
+                  </p>
+                  {errorType === 'permission' && (
+                    <button
+                      onClick={() => setShowSharingPopup(true)}
+                      className="mt-3 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-lg transition-colors"
+                    >
+                      Show Me How to Fix This
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -197,12 +246,22 @@ export default function Loading() {
         {(error || status === 'completed') && (
           <div className="flex justify-center space-x-4 mb-6">
             {error && (
-              <button
-                onClick={() => router.push('/')}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-              >
-                Try Again
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200"
+                >
+                  Start Over
+                </button>
+                {errorType === 'permission' && (
+                  <button
+                    onClick={handleRetryTranslation}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                  >
+                    Retry Translation
+                  </button>
+                )}
+              </div>
             )}
             
             {status === 'completed' && (
@@ -229,6 +288,13 @@ export default function Loading() {
             </div>
           </div>
         )}
+
+        {/* Sharing Permission Popup */}
+        <SharingPopup
+          isOpen={showSharingPopup}
+          onClose={handleCloseSharingPopup}
+          onRetry={handleRetryTranslation}
+        />
       </div>
     </div>
   );

@@ -55,19 +55,24 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Translation error:', error);
     
-    // Provide user-friendly error messages
+    // Provide user-friendly error messages with specific error types
     let userMessage = 'Translation failed. Please try again.';
+    let errorType = 'general';
     
-    if (error.message.includes('permission')) {
+    if (error.message.includes('permission') || error.code === 403) {
       userMessage = 'Cannot access presentation. Please ensure it\'s set to "Anyone with the link can edit".';
-    } else if (error.message.includes('not found')) {
+      errorType = 'permission';
+    } else if (error.message.includes('not found') || error.code === 404) {
       userMessage = 'Presentation not found. Please check the URL and try again.';
+      errorType = 'not_found';
     } else if (error.message.includes('quota')) {
       userMessage = 'Service temporarily unavailable due to high demand. Please try again in a few minutes.';
+      errorType = 'quota';
     }
     
     res.status(500).json({ 
       error: userMessage,
+      errorType: errorType,
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
