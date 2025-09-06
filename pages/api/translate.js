@@ -1,6 +1,10 @@
 import { google } from 'googleapis';
 import { Translate } from '@google-cloud/translate';
 
+// Google Slides Translation API
+// Inspired by: https://github.com/chrisaharden/google_slides_ai_translator by Chris Harden
+// This implementation uses centralized service account credentials for seamless user experience
+
 // Initialize Google APIs with centralized credentials
 // These are YOUR API credentials - users don't need to set up anything
 const auth = new google.auth.GoogleAuth({

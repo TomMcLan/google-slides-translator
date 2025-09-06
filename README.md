@@ -193,6 +193,11 @@ For issues or questions:
 3. Ensure proper API permissions
 4. Review Vercel function logs
 
+## Acknowledgments
+
+This project was inspired by and references the excellent work from:
+- [Google Slides AI Translator](https://github.com/chrisaharden/google_slides_ai_translator) by Chris Harden - Original Google Apps Script implementation for translating Google Slides using AI
+
 ## License
 
 MIT License - see LICENSE file for details.
