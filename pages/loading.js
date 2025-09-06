@@ -40,6 +40,19 @@ export default function Loading() {
       });
 
       if (response.data.success) {
+        // Check if all slides failed (likely permission issue)
+        const results = response.data.results || [];
+        const failedSlides = results.filter(result => !result.success);
+        
+        if (failedSlides.length === results.length && results.length > 0) {
+          // All slides failed - treat as permission error
+          setError('Cannot access presentation. Please ensure it\'s set to "Anyone with the link can edit".');
+          setErrorType('permission');
+          setStatus('error');
+          setShowSharingPopup(true);
+          return;
+        }
+        
         setProgress(100);
         setStatus('completed');
         setMessage('Translation completed successfully!');
